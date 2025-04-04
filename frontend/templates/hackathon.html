@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERCOT Power Grid Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='hackathon.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>ERCOT Power Grid Monitoring</h1>
+            <div class="last-updated">Last updated: <span id="update-time">Never</span></div>
+        </header>
+
+        <div class="controls">
+            <button id="refresh-data">Refresh Data</button>
+            <button id="show-thresholds">Adjust Thresholds</button>
+        </div>
+
+        <div id="threshold-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Adjust Thresholds (MW)</h2>
+                <div id="threshold-controls">
+                    <!-- Threshold inputs will be inserted here -->
+                </div>
+                <div class="modal-buttons">
+                    <button id="save-thresholds">Save</button>
+                    <button id="reset-thresholds">Reset to Defaults</button>
+                    <button id="close-modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="status-message">Loading grid data...</div>
+        <div id="error" class="status-message error hidden"></div>
+
+        <div class="grid-container">
+            <table id="grid-data">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>COAST</th>
+                        <th>EAST</th>
+                        <th>FAR WEST</th>
+                        <th>NORTH</th>
+                        <th>NORTH CENTRAL</th>
+                        <th>SOUTHERN</th>
+                        <th>SOUTH CENTRAL</th>
+                        <th>WEST</th>
+                        <th>TOTAL</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Filled by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentThresholds = {};
+        let defaultThresholds = {};
+
+        function populateTable(zones) {
+            const tableBody = document.querySelector('#grid-data tbody');
+            tableBody.innerHTML = '';
+            
+            const REGION_ORDER = [
+                'COAST', 'EAST', 'FAR_WEST', 'NORTH',
+                'NORTH_C', 'SOUTH_C', 'SOUTHERN', 'WEST'
+            ];
+            
+            zones.forEach(zone => {
+                const row = document.createElement('tr');
+                
+                // Date and Time
+                row.innerHTML = `
+                    <td>${zone.date}</td>
+                    <td>${zone.hour_display}</td>
+                `;
+                
+                // Region cells
+                REGION_ORDER.forEach(region => {
+                    const load = zone.regions[region];
+                    const isExceeded = zone.warnings.includes(region);
+                    const cell = document.createElement('td');
+                    
+                    cell.textContent = load.toLocaleString();
+                    if (isExceeded) {
+                        cell.classList.add('exceeded-cell');
+                        cell.innerHTML += ' ⚠️';
+                    }
+                    row.appendChild(cell);
+                });
+                
+                // Total and Status
+                const totalCell = document.createElement('td');
+                totalCell.textContent = zone.total.toLocaleString();
+                row.appendChild(totalCell);
+                
+                const statusCell = document.createElement('td');
+                statusCell.textContent = zone.warnings.length > 0
+                    ? `Exceeded: ${zone.warnings.join(', ')}`
+                    : 'Normal';
+                row.appendChild(statusCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+
+        function showThresholdModal() {
+            const modal = document.getElementById('threshold-modal');
+            const controls = document.getElementById('threshold-controls');
+            
+            controls.innerHTML = '';
+            for (const [region, value] of Object.entries(currentThresholds)) {
+                const div = document.createElement('div');
+                div.className = 'threshold-control';
+                div.innerHTML = `
+                    <label for="${region}-threshold">${region}:</label>
+                    <input type="number" id="${region}-threshold" value="${value}" min="0">
+                `;
+                controls.appendChild(div);
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function saveThresholds() {
+            const newThresholds = {};
+            for (const region in currentThresholds) {
+                const input = document.getElementById(`${region}-threshold`);
+                newThresholds[region] = Number(input.value);
+            }
+            
+            fetch('/api/update-thresholds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newThresholds)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentThresholds = data.thresholds;
+                    document.getElementById('threshold-modal').classList.add('hidden');
+                    fetchGridData();  // Refresh data with new thresholds
+                }
+            })
+            .catch(error => {
+                console.error('Error saving thresholds:', error);
+            });
+        }
+
+        function resetThresholds() {
+            if (confirm('Reset all thresholds to default values?')) {
+                fetch('/api/update-thresholds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(defaultThresholds)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        currentThresholds = {...defaultThresholds};
+                        document.getElementById('threshold-modal').classList.add('hidden');
+                        fetchGridData();  // Refresh data with default thresholds
+                    }
+                });
+            }
+        }
+
+        async function fetchGridData() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const tableBody = document.querySelector('#grid-data tbody');
+            
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            tableBody.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/grid-data');
+                if (!response.ok) throw new Error('Network response failed');
+                
+                const data = await response.json();
+                
+                document.getElementById('update-time').textContent = 
+                    new Date(data.timestamp).toLocaleString();
+                
+                currentThresholds = data.current_thresholds;
+                defaultThresholds = data.default_thresholds;
+                
+                populateTable(data.zones);
+                
+            } catch (error) {
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchGridData();
+            
+            document.getElementById('refresh-data').addEventListener('click', fetchGridData);
+            document.getElementById('show-thresholds').addEventListener('click', showThresholdModal);
+            document.getElementById('save-thresholds').addEventListener('click', saveThresholds);
+            document.getElementById('reset-thresholds').addEventListener('click', resetThresholds);
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('threshold-modal').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
