@@ -68,6 +68,7 @@
             const tableBody = document.querySelector('#grid-data tbody');
             tableBody.innerHTML = '';
             
+            // Correct region order matching backend processing
             const REGION_ORDER = [
                 'COAST', 'EAST', 'FAR_WEST', 'NORTH',
                 'NORTH_C', 'SOUTH_C', 'SOUTHERN', 'WEST'
@@ -82,7 +83,7 @@
                     <td>${zone.hour_display}</td>
                 `;
                 
-                // Region cells
+                // Region cells - now in correct order
                 REGION_ORDER.forEach(region => {
                     const load = zone.regions[region];
                     const isExceeded = zone.warnings.includes(region);
