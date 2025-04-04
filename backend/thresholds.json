@@ -1,10 +1,10 @@
 {
-    "COAST": 15000,
+    "COAST": 18646,
     "EAST": 2156,
     "FAR_WEST": 8752,
     "NORTH": 1900,
     "NORTH_C": 16584,
-    "SOUTHERN": 5000,
-    "SOUTH_C": 11000,
+    "SOUTHERN": 8000,
+    "SOUTH_C": 5770,
     "WEST": 1527
 }
