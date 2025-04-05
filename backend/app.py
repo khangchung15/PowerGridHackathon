@@ -78,13 +78,12 @@ def military_to_standard_time(military_time):
 
 def process_grid_data(raw_data, thresholds):
     zones = []
-    # Corrected region order to match ERCOT's actual table columns
     REGION_ORDER = ['COAST', 'EAST', 'FAR_WEST', 'NORTH',
                    'NORTH_C', 'SOUTH_C', 'SOUTHERN', 'WEST']
     
     for row in raw_data.get('data', []):
         try:
-            if len(row) >= 11:  # Ensure we have all columns
+            if len(row) >= 11:
                 zone_data = {
                     'date': row[0],
                     'hour': row[1],
@@ -94,18 +93,16 @@ def process_grid_data(raw_data, thresholds):
                     'warnings': []
                 }
                 
-                # Map the columns correctly (columns 2-9 in the HTML table)
                 for i, region in enumerate(REGION_ORDER):
                     load_value = row[2+i].replace(',', '')
                     try:
                         load = float(load_value)
                         zone_data['regions'][region] = load
                         
-                        # Check against threshold
                         if region in thresholds and load > thresholds[region]:
                             zone_data['warnings'].append(region)
                     except ValueError:
-                        zone_data['regions'][region] = 0  # Default if parsing fails
+                        zone_data['regions'][region] = 0
                         print(f"Couldn't parse load value for {region}: {load_value}")
                 
                 zones.append(zone_data)
@@ -116,7 +113,6 @@ def process_grid_data(raw_data, thresholds):
     return zones
 
 if __name__ == '__main__':
-    # Ensure thresholds file exists on startup
     if not os.path.exists(THRESHOLDS_FILE):
         save_thresholds(DEFAULT_THRESHOLDS)
     app.run(debug=True, port=5000)
