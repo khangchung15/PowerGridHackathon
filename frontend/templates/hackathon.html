@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERCOT Power Grid Monitoring</title>
+    <title>Watt Watch Monitoring</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='hackathon.css') }}">
 </head>
 <body>
     <div class="dashboard">
         <header>
-            <h1>ERCOT Power Grid Monitoring</h1>
+            <h1>Watt Watch</h1>
             <div class="last-updated">Last updated: <span id="update-time">Never</span></div>
         </header>
 
@@ -99,7 +99,7 @@
                 
                 const statusCell = document.createElement('td');
                 statusCell.textContent = zone.warnings.length > 0
-                    ? `Exceeded: ${zone.warnings.join(', ')}`
+                    ? `Stressed: ${zone.warnings.join(', ')}`
                     : 'Normal';
                 row.appendChild(statusCell);
                 
