@@ -22,7 +22,6 @@
             <div class="modal-content">
                 <h2>Adjust Thresholds (MW)</h2>
                 <div id="threshold-controls">
-                    <!-- Threshold inputs will be inserted here -->
                 </div>
                 <div class="modal-buttons">
                     <button id="save-thresholds">Save</button>
@@ -46,15 +45,15 @@
                         <th>FAR WEST</th>
                         <th>NORTH</th>
                         <th>NORTH CENTRAL</th>
-                        <th>SOUTH CENTRAL</th>  <!-- Changed order -->
-                        <th>SOUTHERN</th>      <!-- Changed order -->
+                        <th>SOUTH CENTRAL</th>
+                        <th>SOUTHERN</th>
                         <th>WEST</th>
                         <th>TOTAL</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Filled by JavaScript -->
+                    
                 </tbody>
             </table>
         </div>
@@ -68,7 +67,6 @@
             const tableBody = document.querySelector('#grid-data tbody');
             tableBody.innerHTML = '';
             
-            // Correct region order matching backend processing
             const REGION_ORDER = [
                 'COAST', 'EAST', 'FAR_WEST', 'NORTH',
                 'NORTH_C', 'SOUTH_C', 'SOUTHERN', 'WEST'
@@ -77,13 +75,11 @@
             zones.forEach(zone => {
                 const row = document.createElement('tr');
                 
-                // Date and Time
                 row.innerHTML = `
                     <td>${zone.date}</td>
                     <td>${zone.hour_display}</td>
                 `;
                 
-                // Region cells - now in correct order
                 REGION_ORDER.forEach(region => {
                     const load = zone.regions[region];
                     const isExceeded = zone.warnings.includes(region);
@@ -97,7 +93,6 @@
                     row.appendChild(cell);
                 });
                 
-                // Total and Status
                 const totalCell = document.createElement('td');
                 totalCell.textContent = zone.total.toLocaleString();
                 row.appendChild(totalCell);
@@ -150,7 +145,7 @@
                 if (data.status === 'success') {
                     currentThresholds = data.thresholds;
                     document.getElementById('threshold-modal').classList.add('hidden');
-                    fetchGridData();  // Refresh data with new thresholds
+                    fetchGridData();
                 }
             })
             .catch(error => {
@@ -172,7 +167,7 @@
                     if (data.status === 'success') {
                         currentThresholds = {...defaultThresholds};
                         document.getElementById('threshold-modal').classList.add('hidden');
-                        fetchGridData();  // Refresh data with default thresholds
+                        fetchGridData();
                     }
                 });
             }
