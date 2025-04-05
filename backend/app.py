@@ -10,14 +10,14 @@ app = Flask(__name__,
 
 # Default thresholds
 DEFAULT_THRESHOLDS = {
-    'COAST': 18646,
-    'EAST': 2156,
-    'FAR_WEST': 8752,
-    'NORTH': 1900,
-    'NORTH_C': 16584,
-    'SOUTH_C': 5770,
-    'SOUTHERN': 12374,
-    'WEST': 1527
+    'COAST': 17632,
+    'EAST': 2092,
+    'FAR_WEST': 8387,
+    'NORTH': 1631,
+    'NORTH_C': 13110,
+    'SOUTH_C': 5557,
+    'SOUTHERN': 11914,
+    'WEST': 1414
 }
 
 THRESHOLDS_FILE = 'thresholds.json'
